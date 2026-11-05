@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { PenpotMcpServer } from "./PenpotMcpServer";
-import { createLogger } from "./logger";
+import { createLogger, logFilePath } from "./logger";
 
 /**
  * Entry point for Penpot MCP Server
@@ -9,42 +9,38 @@ import { createLogger } from "./logger";
  * Creates and starts the MCP server instance, handling any startup errors
  * gracefully and ensuring proper process termination.
  *
- * Usage:
- * - Default port: node dist/index.js (runs on 4401)
- * - Custom port: node dist/index.js --port <port>
- * - Help: node dist/index.js --help
+ * Configuration via environment variables (see README).
  */
-
 async function main(): Promise<void> {
     const logger = createLogger("main");
-    try {
-        // Parse command line arguments for port configuration
-        const args = process.argv.slice(2);
-        let port = 4401; // Default port
 
+    // log the file path early so it appears before any potential errors
+    logger.info(`Logging to file: ${logFilePath}`);
+
+    try {
+        const args = process.argv.slice(2);
+        let multiUser = false; // default to single-user mode
+
+        // parse command line arguments
         for (let i = 0; i < args.length; i++) {
-            if (args[i] === "--port" || args[i] === "-p") {
-                if (i + 1 < args.length) {
-                    const portArg = parseInt(args[i + 1], 10);
-                    if (!isNaN(portArg) && portArg > 0 && portArg <= 65535) {
-                        port = portArg;
-                    } else {
-                        logger.info("Invalid port number. Using default port 4401.");
-                    }
-                }
+            if (args[i] === "--multi-user") {
+                multiUser = true;
             } else if (args[i] === "--help" || args[i] === "-h") {
                 logger.info("Usage: node dist/index.js [options]");
                 logger.info("Options:");
-                logger.info("  --port, -p <number>    Port number for the HTTP/SSE server (default: 4401)");
+                logger.info("  --multi-user           Enable multi-user mode (default: single-user)");
                 logger.info("  --help, -h             Show this help message");
+                logger.info("");
+                logger.info("Note that configuration is mostly handled through environment variables.");
+                logger.info("Refer to the README for more information.");
                 process.exit(0);
             }
         }
 
-        const server = new PenpotMcpServer(port);
+        const server = new PenpotMcpServer(multiUser);
         await server.start();
 
-        // Keep the process alive
+        // keep the process alive
         process.on("SIGINT", async () => {
             logger.info("Received SIGINT, shutting down gracefully...");
             await server.stop();

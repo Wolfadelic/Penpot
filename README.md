@@ -1,46 +1,35 @@
-# The Penpot MCP Server
+![mcp-server-cover-github-1](https://github.com/user-attachments/assets/dcd14e63-fecd-424f-9a50-c1b1eafe2a4f)
 
-This project enables LLMs to interact directly with Penpot design projects 
-using the model context protocol (MCP), building on Penpot's plugin API
-to facilitate design data retrieval, modification, and creation.
+# Penpot's Official MCP Server
+
+Penpot integrates a LLM layer built on the Model Context Protocol (MCP) via Penpot's Plugin API to interact with a Penpot design file. Penpot's MCP server enables LLMs to perfom data queries, transformation and creation operations.
+
+Penpot's MCP Server is unlike any other you've seen. You get design-to- design, code-to-design and design-code supercharged workflows.
 
 
-## Demonstration
-
-[![Video](https://v32155.1blu.de/penpot/PenpotFest2025_thumbnail.png)](https://v32155.1blu.de/penpot/PenpotFest2025.mp4)
+[![Penpot MCP video playlist](https://github.com/user-attachments/assets/204f1d99-ce51-41dd-a5dd-1ef739f8f089)](https://www.youtube.com/playlist?list=PLgcCPfOv5v57SKMuw1NmS0-lkAXevpn10)
 
 
 ## Architecture
 
-The Penpot MCP server exposes tools to AI clients (LLMs), which support the retrieval
+The **Penpot MCP Server** exposes tools to AI clients (LLMs), which support the retrieval
 of design data as well as the modification and creation of design elements.
-The MCP server communicates with Penpot via a dedicated Penpot MCP plugin,
-which connects to the MCP server via WebSocket.
+The MCP server communicates with Penpot via the dedicated **Penpot MCP Plugin**,
+which connects to the MCP server via WebSocket.  
+This enables the LLM to carry out tasks in the context of a design file by 
+executing code that leverages the Penpot Plugin API.
+The LLM is free to write and execute arbitrary code snippets
+within the Penpot Plugin environment to accomplish its tasks.
 
 ![Architecture](resources/architecture.png)
 
-This repository is a monorepo containing four main components:
+This repository thus contains not only the MCP server implementation itself
+but also the supporting Penpot MCP Plugin 
+(see section [Repository Structure](#repository-structure) below).
 
-1. **Common Types** (`common/`): 
-   - Shared TypeScript definitions for request/response protocol
-   - Ensures type safety across server and plugin components
+## Demonstration
 
-2. **Penpot MCP Server** (`mcp-server/`): 
-   - Provides MCP tools to LLMs for Penpot interaction
-   - Runs a WebSocket server accepting connections from the Penpot MCP plugin
-   - Implements request/response correlation with unique task IDs
-   - Handles task timeouts and proper error reporting
-
-3. **Penpot MCP Plugin** (`penpot-plugin/`):
-   - Connects to the MCP server via WebSocket
-   - Executes tasks in Penpot using the Plugin API  
-   - Sends structured responses back to the server#
-
-4. **Helper Scripts** (`python-scripts/`):
-   - Python scripts that prepare data for the MCP server (development use)
-
-The core components are written in TypeScript, rendering interactions with the
-Penpot Plugin API both natural and type-safe.
+[![Video](https://v32155.1blu.de/penpot/PenpotFest2025_thumbnail.png)](https://v32155.1blu.de/penpot/PenpotFest2025.mp4)
 
 
 ## Usage
@@ -51,6 +40,7 @@ To use the Penpot MCP server, you must
  * open the Penpot MCP plugin in Penpot and connect it to the MCP server. 
 
 Follow the steps below to enable the integration.
+
 
 ### Prerequisites
 
@@ -78,17 +68,21 @@ This bootstrap command will:
 
 ### 2. Load the Plugin in Penpot and Establish the Connection
 
-> [!IMPORTANT]
-> **Browser Compatibility**  
-> Starting with Chromium version 142, Google has hardened the private network access (PNA) enforcement layer.
-> This means that newer Chromium-based browsers (Chrome, Edge, Vivaldi, Opera, Brave, etc.) will not allow
-> Penpot to connect to a local plugin server by default.
+> [!NOTE]
+> **Browser Connectivity Restrictions**
+>
+> Starting with Chromium version 142, the private network access (PNA) restrictions have been hardened,
+> and when connecting to `localhost` from a web application served from a different origin
+> (such as https://design.penpot.app), the connection must explicitly be allowed.
 > 
-> To work around this, you can either
->   * use Firefox or
->   * use an older version of a Chromium-based browser (up to Chromium version 141).
+> Most Chromium-based browsers (e.g. Chrome, Vivaldi) will display a popup requesting permission
+> to access the local network. Be sure to approve the request to allow the connection.
 > 
-> We are working on a solution to this issue.
+> Some browsers take additional security measures, and you may need to disable them.
+> For example, in Brave, disable the "Shield" for the Penpot website to allow local network access.
+> 
+> If your browser refuses to connect to the locally served plugin, check its configuration or 
+> try a different browser (e.g. Firefox) that does not enforce these restrictions.
 
 1. Open Penpot in your browser
 2. Navigate to a design file
@@ -111,7 +105,7 @@ By default, the server runs on port 4401 and provides:
 - **Legacy SSE endpoint**: `http://localhost:4401/sse`
 
 These endpoints can be used directly by MCP clients that support them.
-Simply configure the client to the MCP server by providing the respective URL.
+Simply configure the client to connect the MCP server by providing the respective URL.
 
 When using a client that only supports stdio transport,
 a proxy like `mcp-remote` is required.
@@ -170,3 +164,76 @@ of the prompt input area.
 To add the Penpot MCP server to a Claude Code project, issue the command
 
     claude mcp add penpot -t http http://localhost:4401/mcp
+
+## Repository Structure
+
+This repository is a monorepo containing four main components:
+
+1. **Common Types** (`common/`):
+    - Shared TypeScript definitions for request/response protocol
+    - Ensures type safety across server and plugin components
+
+2. **Penpot MCP Server** (`mcp-server/`):
+    - Provides MCP tools to LLMs for Penpot interaction
+    - Runs a WebSocket server accepting connections from the Penpot MCP plugin
+    - Implements request/response correlation with unique task IDs
+    - Handles task timeouts and proper error reporting
+
+3. **Penpot MCP Plugin** (`penpot-plugin/`):
+    - Connects to the MCP server via WebSocket
+    - Executes tasks in Penpot using the Plugin API
+    - Sends structured responses back to the server#
+
+4. **Helper Scripts** (`python-scripts/`):
+    - Python scripts that prepare data for the MCP server (development use)
+
+The core components are written in TypeScript, rendering interactions with the
+Penpot Plugin API both natural and type-safe.
+
+## Configuration
+
+The Penpot MCP server can be configured using environment variables. All configuration
+options use the `PENPOT_MCP_` prefix for consistency.
+
+### Server Configuration
+
+| Environment Variable               | Description                                                                | Default      |
+|------------------------------------|----------------------------------------------------------------------------|--------------|
+| `PENPOT_MCP_SERVER_LISTEN_ADDRESS` | Address on which the MCP server listens (binds to)                         | `localhost`  |
+| `PENPOT_MCP_SERVER_PORT`           | Port for the HTTP/SSE server                                               | `4401`       |
+| `PENPOT_MCP_WEBSOCKET_PORT`        | Port for the WebSocket server (plugin connection)                          | `4402`       |
+| `PENPOT_MCP_REPL_PORT`             | Port for the REPL server (development/debugging)                           | `4403`       |
+| `PENPOT_MCP_SERVER_ADDRESS`        | Hostname or IP address via which clients can reach the MCP server          | `localhost`  |
+| `PENPOT_MCP_REMOTE_MODE`           | Enable remote mode (disables file system access). Set to `true` to enable. | `false`      |
+
+### Logging Configuration
+
+| Environment Variable   | Description                                          | Default  |
+|------------------------|------------------------------------------------------|----------|
+| `PENPOT_MCP_LOG_LEVEL` | Log level: `trace`, `debug`, `info`, `warn`, `error` | `info`   |
+| `PENPOT_MCP_LOG_DIR`   | Directory for log files                              | `logs`   |
+
+### Plugin Server Configuration
+
+| Environment Variable                      | Description                                                                             | Default      |
+|-------------------------------------------|-----------------------------------------------------------------------------------------|--------------|
+| `PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS` | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
+
+## Beyond Local Execution
+
+The above instructions describe how to run the MCP server and plugin server locally.
+We are working on enabling remote deployments of the MCP server, particularly
+in [multi-user mode](docs/multi-user-mode.md), where multiple Penpot users will
+be able to connect to the same MCP server instance.
+
+To run the server remotely (even for a single user), 
+you may set the following environment variables to configure the two servers
+(MCP server & plugin server) appropriately:
+ * `PENPOT_MCP_REMOTE_MODE=true`: This ensures that the MCP server is operating
+   in remote mode, with local file system access disabled.
+ * `PENPOT_MCP_SERVER_LISTEN_ADDRESS` and `PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS`: 
+   Set these according to your requirements for remote connectivity.
+   To bind all interfaces, use `0.0.0.0` (use caution in untrusted networks).
+ * `PENPOT_MCP_SERVER_ADDRESS=<your-address>`: This sets the hostname or IP address
+   where the MCP server can be reached. The Penpot MCP Plugin uses this to construct
+   the WebSocket URL as `ws://<your-address>:<port>` (default port: `4402`).
